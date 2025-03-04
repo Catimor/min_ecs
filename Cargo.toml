@@ -1,0 +1,27 @@
+[package]
+name = "min_ecs"
+version = "0.1.0"
+edition = "2021"
+authors = [ "Sarchimor" ]
+license = "MIT OR Apache-2.0"
+rust-version = "1.77"
+
+[[bin]]
+name = "bin"
+path = "src/bin.rs"
+
+[dependencies]
+serde = { version = "1.0", features = [ "derive" ], optional = true }
+minecs_common = { path = "./minecs_common" }
+minecs_macro = { path = "./minecs_macro" }
+
+# --Features
+
+[features]
+default = [ "serde" ]
+serde = [ "dep:serde" ]
+
+# --Profiles
+
+[profile.release]
+lto = true	        # Enable link-time optimization: true / "fat" > "thin" > false > "off"

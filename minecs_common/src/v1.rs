@@ -1,10 +1,14 @@
 pub use paste;
+
 //------------------------------------------------------------------------------
 // --Traits
 
 // array of Vec< Component< T >>
 pub trait CompVec {
+	/// Creates a new empty `CompVec`
 	fn new () -> Self;
+	
+	/// Attempts to reduce memory usage by calling `Vec::shrink_to_fit` on every component vector.
 	fn shrink ( &mut self );
 }
 
@@ -13,15 +17,40 @@ pub trait CompVecFn< T, E >: CompVec
 where
 	EntityId< E >: Clone,
 {
+	/// Adds component `T` to an internal collection.
+	/// Returns id of the component.
 	fn insert ( &mut self, item: Component< T, E > ) -> CompId< T, E >;
+	
+	/// Removes component `T` with specified id.
+	/// Returns `Ok(())` on success, and `EcsErr` otherwise.
+	/// 
+	/// # Errors
+	/// 
+	/// EcsErr::NoSuchCompId - when component with specified id does not exist
 	fn remove ( &mut self, id: CompId< T, E > ) -> Result< (), EcsErr >;
 	
+	
+	/// Attempts to borrow component with specified id.
+	/// On success returns `Some( &Component< T, E > )` or `None` otherwise.
 	fn get ( &self, id: CompId< T, E > ) -> Option< &Component< T, E > >;
+	
+	/// Attempts to mutably borrow component with specified id.
+	/// On success returns `Some( &mut Component< T, E > )` or `None` otherwise.
 	fn get_mut ( &mut self, id: CompId< T, E > ) -> Option< &mut Component< T, E > >;
 	
+	
+	/// Returns amount of components (including retained for overwrite) of type `T`.
 	fn len ( &self, _: std::marker::PhantomData< T > ) -> usize;
 	
+	
+	/// Returns an iterator over components of type `T`.
+	/// 
+	/// The iterator yields all items from start to end.
 	fn iter ( &self ) -> CompIter< T, E >;// core::slice::Iter< 'a, Component< T, E > >
+	
+	/// Returns an iterator over components of type `T`, that allows modifying each value.
+	/// 
+	/// The iterator yields all items from start to end.
 	fn iter_mut ( &mut self ) -> CompIterMut< T, E >;// core::slice::IterMut< 'a, Component< T, E > >
 }
 
@@ -38,11 +67,11 @@ pub trait EcsMain< E > {
 	
 	/// Attempts to borrow entity with specified id.
 	/// On success returns `Some( &Entity )` or `None` otherwise.
-	fn borrow_entity ( &self, id: EntityId< E > ) -> Option< &E >;
+	fn entity ( &self, id: EntityId< E > ) -> Option< &E >;
 	
 	/// Attempts to mutably borrow entity with specified id.
 	/// On success returns `Some( &mut Entity )` or `None` otherwise.
-	fn borrow_mut_entity ( &mut self, id: EntityId< E > ) -> Option< &mut E >;
+	fn entity_mut ( &mut self, id: EntityId< E > ) -> Option< &mut E >;
 	
 	
 	/// Returns true if component with given id exists, or false otherwise.
@@ -86,7 +115,7 @@ pub trait EcsCompFn< T, E > {
 }
 
 pub trait EcsFn< V, E > {
-	/// Returns an iterator over the slice.
+	/// Returns an iterator over components of type `T`.
 	/// 
 	/// The iterator yields all items from start to end.
 	fn iter< T > ( &self ) -> CompIter< T, E >
@@ -95,7 +124,7 @@ pub trait EcsFn< V, E > {
 		E: Clone,
 	;
 	
-	/// Returns an iterator that allows modifying each value.
+	/// Returns an iterator over components of type `T`, that allows modifying each value.
 	/// 
 	/// The iterator yields all items from start to end.
 	fn iter_mut< T > ( &mut self ) -> CompIterMut< T, E >
@@ -106,10 +135,18 @@ pub trait EcsFn< V, E > {
 	
 	/// Attempts to remove specified component.
 	/// On success returns `Ok(())` or `EcsErr` otherwise.
+	/// 
+	/// # Errors
+	/// 
+	/// EcsErr::CompVecMissingComponent - when component is present in entity, but cannot be found in `CompVec`
+	/// EcsErr::EntityMissingComponent - when component is not present in entity
+	/// EcsErr::NoSuchEntityId - when entity with specified id does not exist
+	/// EcsErr::NoSuchCompId - when component with specified id does not exist
 	fn remove< T > ( &mut self, e_id: EntityId< E > ) -> Result< (), EcsErr >
 	where
 		V: CompVecFn< T, E >,
 		E: EntityFn< T > + Clone,
+		T: Clone,
 	;
 	
 	/// Calls a provided function or closure for each entity in ecs.
@@ -229,10 +266,11 @@ where
 	/// The process of adding a `Component` to the `Entity` is as follows:
 	/// 
 	/// 1. new `Entity` registered in ECS -> `EntityId`,
-	/// 1. new `Component` created + `EntityId` stored in `Component`, <- this step
-	/// 1. `Component` registered in ECS -> `CompId`,
-	/// 1. `CompId` stored in `Entity`.
-	pub fn new ( id: EntityId< E >, value: T ) -> Self {
+	/// 2. new `Component` created + `EntityId` stored in `Component`, <- this step
+	/// 3. `Component` registered in ECS -> `CompId`,
+	/// 4. `CompId` stored in `Entity`.
+	#[inline]
+	pub const fn new ( id: EntityId< E >, value: T ) -> Self {
 		Self {
 			id,
 			inner: value,
@@ -246,28 +284,31 @@ where
 	/// The association between component and entity is incomplete at this point.
 	/// 
 	/// Please refer to `Component::new` for details.
+	#[inline]
 	pub fn overwrite ( &mut self, item: Self ) {
 		self.id = item.id;
 		self.inner = item.inner;
 	}
 	
 	/// Returns id of the entity this component is associated to.
-	pub fn id ( &self ) -> EntityId< E > {
+	#[inline]
+	pub const fn id ( &self ) -> EntityId< E > {
 		self.id
 	}
 	
 	/// Returns the contained component, consuming the `self` value.
+	#[inline]
 	pub fn unwrap ( self ) -> T {
 		self.inner
 	}
 	
-	/// Borrows the contained component.
-	pub fn borrow ( &self ) -> &T {
+	#[inline]
+	pub const fn inner( &self ) -> &T {
 		&self.inner
 	}
 	
-	/// Mutably borrows the contained component.
-	pub fn borrow_mut ( &mut self ) -> &mut T {
+	#[inline]
+	pub fn inner_mut( &mut self ) -> &mut T {
 		&mut self.inner
 	}
 }
@@ -293,10 +334,11 @@ impl< E > EntityId< E > {
 	/// The process of adding a `Component` to the `Entity` is as follows:
 	/// 
 	/// 1. new `Entity` registered in ECS -> `EntityId`, <- this step
-	/// 1. new `Component` created + `EntityId` stored in `Component`,
-	/// 1. `Component` registered in ECS -> `CompId`,
-	/// 1. `CompId` stored in `Entity`.
-	pub fn new ( value: usize ) -> Self {
+	/// 2. new `Component` created + `EntityId` stored in `Component`,
+	/// 3. `Component` registered in ECS -> `CompId`,
+	/// 4. `CompId` stored in `Entity`.
+	#[inline]
+	pub const fn new ( value: usize ) -> Self {
 		Self {
 			id: value,
 			marker: std::marker::PhantomData::< E >,
@@ -305,11 +347,13 @@ impl< E > EntityId< E > {
 }
 
 impl< E > From< EntityId< E > > for usize {
+	#[inline]
 	fn from( value: EntityId< E > ) -> Self {
 		value.id
 	}
 }
 impl< E > From< usize > for EntityId< E > {
+	#[inline]
 	fn from( value: usize ) -> Self {
 		Self::new( value )
 	}
@@ -342,7 +386,8 @@ impl< T, E > CompId< T, E > {
 	/// 1. new `Component` created + `EntityId` stored in `Component`,
 	/// 1. `Component` registered in ECS -> `CompId`, <- this step
 	/// 1. `CompId` stored in `Entity`.
-	pub fn new ( id: usize ) -> Self {
+	#[inline]
+	pub const fn new ( id: usize ) -> Self {
 		Self {
 			id,
 			comp_marker: std::marker::PhantomData::< T >,
@@ -352,11 +397,13 @@ impl< T, E > CompId< T, E > {
 }
 
 impl< T, E > From< CompId< T, E > > for usize {
+	#[inline]
 	fn from( value: CompId< T, E > ) -> Self {
 		value.id
 	}
 }
 impl< T, E > From< usize > for CompId< T, E > {
+	#[inline]
 	fn from( value: usize ) -> Self {
 		Self::new( value )
 	}
@@ -374,6 +421,7 @@ pub struct CompIter< 'a, T, E > {
 }
 
 impl< 'a, T, E > From< core::slice::Iter< 'a, Component< T, E > > > for CompIter< 'a, T, E > {
+	#[inline]
 	fn from( value: core::slice::Iter< 'a, Component< T, E > > ) -> Self {
 		Self {
 			data: value,
@@ -384,8 +432,9 @@ impl< 'a, T, E > From< core::slice::Iter< 'a, Component< T, E > > > for CompIter
 impl< 'a, T: Clone, E: Clone > Iterator for CompIter< 'a, T, E > {
 	type Item = &'a T;
 	
+	#[inline]
 	fn next( &mut self ) -> Option< Self::Item > {
-		self.data.next().map( Component::borrow )
+		self.data.next().map( Component::inner )
 	}
 }
 
@@ -399,6 +448,7 @@ pub struct CompIterMut< 'a, T, E > {
 }
 
 impl< 'a, T, E > From< core::slice::IterMut< 'a, Component< T, E > > > for CompIterMut< 'a, T, E > {
+	#[inline]
 	fn from( value: core::slice::IterMut< 'a, Component< T, E > > ) -> Self {
 		Self {
 			data: value,
@@ -409,8 +459,9 @@ impl< 'a, T, E > From< core::slice::IterMut< 'a, Component< T, E > > > for CompI
 impl< 'a, T: Clone, E: Clone > Iterator for CompIterMut< 'a, T, E > {
 	type Item = &'a mut T;
 	
+	#[inline]
 	fn next( &mut self ) -> Option< Self::Item > {
-		self.data.next().map( Component::borrow_mut )
+		self.data.next().map( Component::inner_mut )
 	}
 }
 
@@ -426,9 +477,11 @@ pub enum EcsErr {
 	NoSuchCompId( usize ), // `Component` with specified id does not exist
 }
 
+#[allow( clippy::min_ident_chars )]
 impl std::fmt::Display for EcsErr {
+	#[inline]
 	fn fmt( &self, f: &mut std::fmt::Formatter<'_> ) -> std::fmt::Result {
-		match self {
+		match *self {
 			Self::CompVecMissingComponent( e_id, c_id ) => format!( "component with id: {c_id} is present in entity with id {e_id}, but cannot be found in CompVec" ),
 			Self::EntityMissingComponent( id ) => format!( "missing component in entity with id: {id}" ),
 			Self::NoSuchEntityId( id ) => format!( "entity with id: {id} does not exist" ),
@@ -478,24 +531,29 @@ macro_rules! new_ecs {
 		impl EcsMain< $entity > for $name where
 			EntityId< $entity >: Copy,
 		{
+			#[inline]
 			fn shrink ( &mut self ) {
 				self.components.shrink();
 			}
 			
+			#[inline]
 			fn new_entity ( &mut self ) -> EntityId< $entity > {
 				let idx = self.entities.len();
 				self.entities.push( $entity::new() );
 				EntityId::from( idx )
 			}
 			
-			fn borrow_entity ( &self, id: EntityId< $entity > ) -> Option< &$entity > {
+			#[inline]
+			fn entity ( &self, id: EntityId< $entity > ) -> Option< &$entity > {
 				self.entities.get( usize::from( id ) )
 			}
 			
-			fn borrow_mut_entity ( &mut self, id: EntityId< $entity > ) -> Option< &mut $entity > {
+			#[inline]
+			fn entity_mut ( &mut self, id: EntityId< $entity > ) -> Option< &mut $entity > {
 				self.entities.get_mut( usize::from( id ) )
 			}
-	
+			
+			#[inline]
 			fn has_component<T> ( &self, id: CompId< T, $entity > ) -> bool
 			where
 			$entity: EntityFn<T>
@@ -515,14 +573,17 @@ macro_rules! new_ecs {
 			CompId< T, $entity >: Copy,
 			T: Clone,
 		{
+			#[inline]
 			fn get ( &self, id: CompId< T, $entity > ) -> Option< &T > {
-				self.components.get( id ).map( Component::borrow )
-			}
-	
-			fn get_mut ( &mut self, id: CompId< T, $entity > ) -> Option< &mut T > {
-				self.components.get_mut( id ).map( Component::borrow_mut )
+				self.components.get( id ).map( Component::inner )
 			}
 			
+			#[inline]
+			fn get_mut ( &mut self, id: CompId< T, $entity > ) -> Option< &mut T > {
+				self.components.get_mut( id ).map( Component::inner_mut )
+			}
+			
+			#[inline]
 			fn call< F: Fn( &T ) -> U, U > ( &self, id: CompId< T, $entity >, fcn: F ) -> Option< U > {
 				if let Some( comp ) = self.get( id ) {
 					Some( fcn( comp ) )
@@ -531,6 +592,7 @@ macro_rules! new_ecs {
 				}
 			}
 			
+			#[inline]
 			fn call_mut< F: FnMut( &mut T ) -> U, U > ( &mut self, id: CompId< T, $entity >, mut fcn: F ) -> Option< U > {
 				if let Some( comp ) = self.get_mut( id ) {
 					Some( fcn( comp ) )
@@ -539,6 +601,7 @@ macro_rules! new_ecs {
 				}
 			}
 			
+			#[inline]
 			fn insert ( &mut self, id: EntityId< $entity >, item: T ) -> Option< CompId< T, $entity >> {
 				if let Some( entity ) = self.entities.get_mut( usize::from( id ) ) {
 					let comp = Component::new( id, item );
@@ -557,6 +620,7 @@ macro_rules! new_ecs {
 			$ca: CompVec,
 			$entity: Entity,
 		{
+			#[inline]
 			fn iter< T > ( &self ) -> CompIter< T, $entity >
 			where
 				$ca: CompVec + CompVecFn< T, $entity >,
@@ -564,6 +628,7 @@ macro_rules! new_ecs {
 				self.components.iter()
 			}
 			
+			#[inline]
 			fn iter_mut< T > ( &mut self ) -> CompIterMut< T, $entity >
 			where
 				$ca: CompVec + CompVecFn< T, $entity >,
@@ -571,21 +636,26 @@ macro_rules! new_ecs {
 				self.components.iter_mut()
 			}
 			
+			#[inline]
 			fn remove<T> ( &mut self, e_id: EntityId< $entity > ) -> Result< (), EcsErr >
 			where
 				$ca: CompVec + CompVecFn< T, $entity >,
-				$entity: EntityFn< T >,
+				$entity: EntityFn< T > + Clone,
+				T: Clone,
 			{
 				if let Some( entity ) = self.entities.get_mut( usize::from( e_id ) ) {
 					let comp_id = entity.get();
 					//let comp_id = entity.remove();
 					if let Some( cid ) = comp_id {
 						let out = self.components.remove( cid );
+						
 						if out.is_ok() {
 							entity.remove();
+							Ok(())
+						} else {
+							Err( EcsErr::CompVecMissingComponent( usize::from( e_id ), usize::from( cid ) ))
 						}
 						
-						out
 					} else {
 						Err( EcsErr::EntityMissingComponent( usize::from( e_id ) ))
 					}
@@ -594,6 +664,7 @@ macro_rules! new_ecs {
 				}
 			}
 			
+			#[inline]
 			fn run_system< F: FnMut( &mut $ca, &$entity )> ( &mut self, mut system_fn: F ) {
 				for ent in self.entities.iter() {
 					system_fn( &mut self.components, ent );
@@ -603,6 +674,7 @@ macro_rules! new_ecs {
 		}
 		
 		impl $name {
+			#[inline]
 			pub fn new () -> Self {
 				Self {
 					entities: Vec::new(),
@@ -620,6 +692,7 @@ macro_rules! new_ecs {
 				$(
 					/// Attempts to add component to the entity, potentially discarding the previous component.
 					/// On success returns `Some( CompId< T, E > )` or `None` otherwise.
+					#[inline]
 					pub fn [<insert_ $fld_name>] ( &mut self, id: EntityId< $entity >, item: $t ) -> Option< CompId< $t, $entity >> {
 						if let Some( entity ) = self.entities.get_mut( usize::from( id ) ) {
 							let comp = Component::new( id, item );
@@ -635,6 +708,7 @@ macro_rules! new_ecs {
 					
 					/// Attempts to remove specified component.
 					/// On success returns `Ok(())` or `EcsErr` otherwise.
+					#[inline]
 					pub fn [<remove_ $fld_name>] ( &mut self, id: EntityId< $entity > ) -> Result< (), EcsErr > {
 						let e_id = usize::from( id );
 						if let Some( entity ) = self.entities.get_mut( e_id ) {

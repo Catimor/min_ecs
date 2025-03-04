@@ -28,11 +28,11 @@ pub fn main() {
 		iteration();
 	// */
 	
-	//*
+	/*
 	removal();
 	// */
 	
-	/*
+	//*
 	run_system();
 	// */
 }
@@ -83,9 +83,9 @@ fn removal () {
 	ecs.insert_bonus_fld( entity_2, 1024 );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// before removal:\nentity_0 = {:#?}", ecs.borrow_entity( entity_0 ).unwrap() );
+	println!( "// before removal:\nentity_0 = {:#?}", ecs.entity( entity_0 ).unwrap() );
 	
-	let comp_id = ecs.borrow_entity( entity_0 ).unwrap().get().unwrap();
+	let comp_id = ecs.entity( entity_0 ).unwrap().get().unwrap();
 	let mut opt: Option< &f64 >;
 	opt = ecs.get( comp_id );
 	println!( "ecs.get( comp_id ) = {:#?}", opt );
@@ -93,29 +93,29 @@ fn removal () {
 	_ = ecs.remove::<f64>( entity_0 );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// after removal:\nentity_0 = {:#?}", ecs.borrow_entity( entity_0 ).unwrap() );
+	println!( "// after removal:\nentity_0 = {:#?}", ecs.entity( entity_0 ).unwrap() );
 	
 	opt = ecs.get( comp_id );
 	println!( "ecs.get( comp_id ) = {:#?}", opt );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// before insert:\nentity_1 = {:#?}", ecs.borrow_entity( entity_1 ).unwrap() );
+	println!( "// before insert:\nentity_1 = {:#?}", ecs.entity( entity_1 ).unwrap() );
 	ecs.insert( entity_1, 418.0 );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// after insert:\nentity_1 = {:#?}", ecs.borrow_entity( entity_1 ).unwrap() );
+	println!( "// after insert:\nentity_1 = {:#?}", ecs.entity( entity_1 ).unwrap() );
 	
 	opt = ecs.get( comp_id );
 	println!( "ecs.get( comp_id ) = {:#?}", opt );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// before removing `bonus_fld` from:\nentity_2 = {:#?}", ecs.borrow_entity( entity_2 ).unwrap() );
+	println!( "// before removing `bonus_fld` from:\nentity_2 = {:#?}", ecs.entity( entity_2 ).unwrap() );
 	
 	let res = ecs.remove_bonus_fld( entity_2 );
 	println!( "\necs.remove_bonus_fld( entity_2 ) = {:#?}", res );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// after removing `bonus_fld` from:\nentity_2 = {:#?}", ecs.borrow_entity( entity_2 ).unwrap() );
+	println!( "// after removing `bonus_fld` from:\nentity_2 = {:#?}", ecs.entity( entity_2 ).unwrap() );
 }
 
 fn run_system () {
@@ -136,9 +136,9 @@ fn run_system () {
 		let mut new_armor;
 		
 		if let (Some( id_hp ), Some( id_armor ), Some( id_dmg )) = (entity.health(), entity.armor(), entity.incoming_damage()) {
-			let hp = ca.get( id_hp ).unwrap().borrow();
-			let armor = ca.get( id_armor ).unwrap().borrow();
-			let dmg_vec = ca.get( id_dmg ).unwrap().borrow();
+			let hp = ca.get( id_hp ).unwrap().inner();
+			let armor = ca.get( id_armor ).unwrap().inner();
+			let dmg_vec = ca.get( id_dmg ).unwrap().inner();
 			
 			new_hp = hp.0;
 			new_armor = Some( armor.0 );
@@ -170,8 +170,8 @@ fn run_system () {
 			}
 			
 		} else if let (Some( id_hp ), Some( id_dmg )) = (entity.health(), entity.incoming_damage()) {
-			let hp = ca.get( id_hp ).unwrap().borrow();
-			let dmg_vec = ca.get( id_dmg ).unwrap().borrow();
+			let hp = ca.get( id_hp ).unwrap().inner();
+			let dmg_vec = ca.get( id_dmg ).unwrap().inner();
 			
 			new_hp = hp.0;
 			new_armor = None;
@@ -189,16 +189,16 @@ fn run_system () {
 			return;
 		}
 		
-		ca.get_mut( entity.health().unwrap() ).unwrap().borrow_mut().0 = new_hp;
+		ca.get_mut( entity.health().unwrap() ).unwrap().inner_mut().0 = new_hp;
 		println!( "hp = {new_hp}" );
 		if let Some( val ) = new_armor {
-			ca.get_mut( entity.armor().unwrap() ).unwrap().borrow_mut().0 = val;
+			ca.get_mut( entity.armor().unwrap() ).unwrap().inner_mut().0 = val;
 			println!( "armor = {val}" );
 		} else if let Some( id ) = entity.armor() {
 			_ = ca.remove( id );
 			println!( "armor removed" );
 		}
 		
-		ca.get_mut( entity.incoming_damage().unwrap() ).unwrap().borrow_mut().clear();
+		ca.get_mut( entity.incoming_damage().unwrap() ).unwrap().inner_mut().clear();
 	});
 }

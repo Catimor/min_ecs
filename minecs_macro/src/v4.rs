@@ -103,10 +103,8 @@ impl ToTokens for CompArray {
 			min_ecs_name,
 			ca_name,
 			entity_name,
-			all_types: _,
-			generic_types: _,
-			named_comps: _,
 			derives,
+			..
 		} = self;
 		
 		let entity = MinEcsEntity::from( self );
@@ -232,13 +230,11 @@ enum DeriveType {
 
 impl DeriveType {
 	pub fn new_vec () -> Vec< DeriveType > {
-		let mut out = Vec::new();
+		let debug = Self::Ident( syn::Ident::new( "Debug", Span::mixed_site()));
+		let clone = Self::Ident( syn::Ident::new( "Clone", Span::mixed_site()));
+		let pareq = Self::Ident( syn::Ident::new( "PartialEq", Span::mixed_site()));
 		
-		out.push( Self::Ident( syn::Ident::new( "Debug", Span::mixed_site())) );
-		out.push( Self::Ident( syn::Ident::new( "Clone", Span::mixed_site())) );
-		out.push( Self::Ident( syn::Ident::new( "PartialEq", Span::mixed_site())) );
-		
-		out
+		vec![ debug, clone, pareq ]
 	}
 }
 
@@ -255,7 +251,7 @@ impl Parse for DeriveType {
 
 impl ToTokens for DeriveType {
 	fn to_tokens( &self, tokens: &mut proc_macro2::TokenStream ) {
-		tokens.extend( match &self {
+		tokens.extend( match self {
 			Self::Ident( val ) => quote! { #val },
 			Self::Path( val ) => quote! { #val },
 		});
@@ -272,16 +268,15 @@ pub struct MinEcsEntity {
 	generic_pairs: Vec< IdentTypePair >,
 }
 
+#[allow( clippy::min_ident_chars )]
 impl From< &CompArray > for MinEcsEntity {
 	fn from( value: &CompArray ) -> Self {
 		let CompArray {
-			min_ecs_name: _,
-			ca_name: _,
 			entity_name,
-			all_types: _,
 			generic_types,
 			named_comps,
 			derives,
+			..
 		} = &value;
 		
 		let mut generic_pairs = Vec::new();
@@ -354,10 +349,7 @@ impl ToTokens for MinEcsEntity {
 		let generic_idents = generic_pairs.iter().map( syn::Ident::from ).collect::<Vec<_>>();
 		let generic_types = generic_pairs.iter().map( syn::Type::from ).collect::<Vec<_>>();
 		
-		let tmp_iter = generic_idents.iter().zip( generic_types.iter() );
-		
-		for ( ident, t ) in tmp_iter {
-			
+		for ( ident, t ) in generic_idents.iter().zip( generic_types.iter() ) {
 			tokens.extend( quote! {
 				impl EntityFn< #t > for #entity_name {
 					fn set ( &mut self, item: CompId< #t, Self > ) -> Option< CompId< #t, Self >> {
@@ -391,9 +383,7 @@ impl ToTokens for MinEcsEntity {
 		let mut try_set_ident;
 		let mut remove_ident;
 		
-		#[allow( clippy::min_ident_chars )]
-		let tmp_iter = named_idents.iter().zip( named_types.iter() );
-		for ( ident, t ) in tmp_iter {
+		for ( ident, t ) in named_idents.iter().zip( named_types.iter() ) {
 			_ = write!( &mut s_ident, "set_{ident}" );
 			set_ident = syn::Ident::new( &s_ident, Span::mixed_site() );
 			s_ident.clear();
@@ -450,13 +440,11 @@ pub struct MinEcsCa {
 impl From< &CompArray > for MinEcsCa {
 	fn from( value: &CompArray ) -> Self {
 		let CompArray {
-			min_ecs_name: _,
 			ca_name,
 			entity_name,
 			all_types,
-			generic_types: _,
-			named_comps: _,
 			derives,
+			..
 		} = &value;
 		
 		let mut component_names = Vec::new();
@@ -541,9 +529,9 @@ impl ToTokens for MinEcsCa {
 			}
 		});
 		
-		let tmp_iter = component_names.iter();
-		let tmp_iter = tmp_iter.zip( recycle_names.iter() );
-		let tmp_iter = tmp_iter.zip( fld_types.iter() );
+		let tmp_iter = component_names.iter()
+			.zip( recycle_names.iter() )
+			.zip( fld_types.iter() );
 		
 		for ( (ident, ident_recycle), t ) in tmp_iter {
 			tokens.extend( quote! {

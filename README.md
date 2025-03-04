@@ -5,10 +5,10 @@
 	<a href="#error-handling">Error Handling</a> •
 	<a href="#versioning">Versioning</a> •
 	<a href="#msrv-policy">MSRV policy</a> •
-	<a href="#license">License</a> •
+	<a href="#license">License</a>
 </p>
 
-# MinEcs ![Static Badge](https://img.shields.io/badge/MinEcs_MSRV-1.77-purple) ![Static Badge](https://img.shields.io/badge/Version-0.1.0-purple)
+# MinEcs ![Static Badge](https://img.shields.io/badge/MinEcs_MSRV-1.77-purple) ![Static Badge](https://img.shields.io/badge/Version-0.1.1-purple)
 
 ### **This project is personal/experimental and NOT production ready.**
 
@@ -41,11 +41,11 @@ minecs!(
 /*
 `minecs!` usage:
 1. optional derive attribute, ( on top of: `Debug`, `Clone`, `PartialEq` ) fe. `#[derive( serde::Serialize, serde::Deserialize )]`
-1. ecs declaration, fe. `ecs MinEcs< CompArray, TestEntity >`
+2. ecs declaration, fe. `ecs MinEcs< CompArray, TestEntity >`
 	1. keyword `ecs`
-	1. identifier - name of the ecs,
-	1. angled braces surrounding two identifiers separated by a comma: component_array and entity,
-1. curly braces `{}` surrounding component declarations ( either or both )
+	2. identifier - name of the ecs,
+	3. angled braces surrounding two identifiers separated by a comma: component_array and entity,
+3. curly braces `{}` surrounding component declarations ( either or both )
 	- keyword `types` followed by square brackets `[]` surrounding comma separated list of not-repeating types; fe. `types [usize, f64]`,
 	- comma separated field declarations, such as for struct, in form: identifier, colon, type; fe. `names: Vec< Rc< str >>`.
 */
@@ -114,7 +114,7 @@ min_ecs = { path = "../min_ecs-master" }# Assuming your project and the unzipped
 ### Features
 
 * **serde**
-	provides `serde::Serialize` and `serde::Deserialize` impl on every exported type.
+	provides `serde::Serialize` and `serde::Deserialize` impl on exported types. Types generatedd via macro `minecs!` will need an attribute section.
 	
 
 ## Error Handling

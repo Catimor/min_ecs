@@ -9,8 +9,6 @@ rust-version = "1.77"
 [lib]
 proc-macro = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 proc-macro2 = "1.0.93"
 quote = "1.0.38"

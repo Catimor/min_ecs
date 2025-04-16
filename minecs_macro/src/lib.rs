@@ -181,23 +181,30 @@
 use syn::{ parse_macro_input, parse::Parse };
 use quote::quote;
 
-//mod v3;
-//use v3::*;
-mod v4;
-use v4::*;
+mod prod;
+use prod::*;
+//mod alt::*;
+//use alt::*;
 
 /// Creates ECS structs and implements necessary traits for them.
 /// 
 /// # Usage
 /// 
 /// 1. optional derive attribute, ( on top of: `Debug`, `Clone`, `PartialEq` ) fe. `#[derive( serde::Serialize, serde::Deserialize )]`
-/// 1. ecs declaration, fe. `ecs MinEcs< CompArray, TestEntity >`
-/// 	1. keyword `ecs`
-/// 	1. identifier - name of the ecs,
-/// 	1. angled braces `<>` surrounding two identifiers separated by a comma: component_array and entity,
-/// 1. curly braces `{}` surrounding component declarations ( either or both )
-/// 	- keyword `types` followed by square brackets `[]` surrounding comma separated list of not-repeating types; fe. `types [usize, f64]`,
-/// 	- comma separated field declarations, such as for struct, in form: identifier, colon, type; fe. `names: Vec< Rc< str >>`.
+/// 2. world declaration, fe. `world MinEcs;`
+/// 	1. keyword `world`
+/// 	2. identifier - name of the world,
+/// 	3. semicolon
+/// 3. comp_vec declaration, fe. `comp_vec Components;`
+/// 	1. keyword `comp_vec`
+/// 	2. identifier - name of the comp_vec,
+/// 	3. semicolon
+/// 4. at least one entity declaration, fe. `entity TestEntity ( f64, usize ) { name_vec: Vec< Rc< str >> }`
+/// 	1. keyword `entity`
+/// 	2. identifier - name of the entity,
+/// 	3. either or both:
+/// 		- parentheses `()` surrounding comma separated list of not-repeating types, followed either by braces or semicolon; fe. `( f64, usize );`,
+/// 		- curly braces `{}` surrounding comma separated field declarations in form: identifier, colon, type; fe. `{ name_vec: Vec< Rc< str >> }`.
 /// 
 /// ```rust
 /// # use minecs_common::*;
@@ -206,15 +213,17 @@ use v4::*;
 /// 
 /// minecs!(
 /// 	#[derive( /* serde::Serialize, serde::Deserialize, ... */ )]
-/// 	ecs MinEcs< CompArray, TestEntity > {
-/// 		types [f64, usize]
+/// 	world MinEcs;
+/// 	comp_vec CompArray;
+/// 	entity TestEntity ( f64, usize )
+/// 	{
 /// 		some_flag: bool,
-/// 		names: Vec< Rc< str >>,
+/// 		name_vec: Vec< Rc< str >>,
 /// 	}
 /// );
 /// ```
 #[proc_macro]
 pub fn minecs ( tokens: proc_macro::TokenStream ) -> proc_macro::TokenStream {
-	let ir = parse_macro_input!( tokens with CompArray::parse );
+	let ir = parse_macro_input!( tokens with World::parse );
 	quote! { #ir }.into()
 }

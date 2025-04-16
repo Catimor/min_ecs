@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "minecs_common"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "paste",
  "serde",
@@ -12,7 +12,7 @@ dependencies = [
 
 [[package]]
 name = "minecs_macro"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "minecs_common",
  "proc-macro2",

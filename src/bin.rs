@@ -1,35 +1,45 @@
-#![allow(dead_code)]
+#![allow( dead_code )]
 
 use min_ecs::*;
 
-#[derive( Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize )]
-struct Points ( u32 );
+#[cfg_attr( feature = "serde", derive( serde::Serialize, serde::Deserialize ) )]
+#[derive( Debug, Clone, Copy, PartialEq,  )]
+pub struct Points ( u32 );
 
-minecs!(
+//---
+#[cfg( feature = "serde" )]
+minecs! {
 	#[derive( serde::Serialize, serde::Deserialize )]
-	ecs MinEcs< CompArray, TestEntity > {
-		types [f64, usize]
+	world MinEcs;
+	entity TestEntity ( f64, usize ) {
 		bonus_fld: usize,
 	}
-);
-
-minecs!(
-	#[derive( serde::Serialize, serde::Deserialize )]
-	ecs CharacterEcs< CharComps, Character > {
-		types [f64, usize]
+	entity Character ( f64, usize ) {
 		health: Points,
 		armor: Points,
 		incoming_damage: Vec< Points >,
 	}
-);
+}
+#[cfg( not( feature = "serde" ))]
+minecs! {
+	world MinEcs;
+	entity TestEntity ( f64, usize ) {
+		bonus_fld: usize,
+	}
+	entity Character ( f64, usize ) {
+		health: Points,
+		armor: Points,
+		incoming_damage: Vec< Points >,
+	}
+}
 
 pub fn main() {
 	/*
-		iteration();
+	removal();
 	// */
 	
-	/*
-	removal();
+	//*
+	iteration();
 	// */
 	
 	//*
@@ -38,99 +48,106 @@ pub fn main() {
 }
 
 fn iteration () {
-	let mut ecs = MinEcs::new();
+	let mut world = MinEcs::new();
 	
-	let entity_0 = ecs.new_entity();
-	ecs.insert( entity_0, 67.0 );
+	let entity_0 = world.new_entity::<TestEntity>();
+	world.insert( entity_0, 67.0 );
 	
-	let entity_1 = ecs.new_entity();
-	ecs.insert( entity_1, 422 );
+	let entity_1 = world.new_entity::<TestEntity>();
+	world.insert( entity_1, 422 );
 	
-	let entity_2 = ecs.new_entity();
-	ecs.insert( entity_2, 2 );
-	ecs.insert( entity_2, 10.0 );
-	ecs.insert_bonus_fld( entity_2, 1024 );
+	let entity_2 = world.new_entity::<TestEntity>();
+	world.insert( entity_2, 2 );
+	world.insert( entity_2, 10.0 );
+	world.insert_fn( TestEntity::set_bonus_fld, entity_2, 1024 );
 	
-	//println!( "ecs.iter::< usize >() => " );
-	for v in ecs.iter::< usize >() {
+	println!( "ecs.iter::< usize >() => " );
+	for v in world.iter::< usize >() {
 		println!( "    {v:#?}" );
 	}
 	
 	println!( "after iteration: " );
-	for v in ecs.iter_mut::< usize >() {
+	for v in world.iter_mut::< usize >() {
 		*v += 10;
 		println!( "    {v:#?}" );
 	}
 	
 	println!( "ecs.iter::< f64 >() => " );
-	for v in ecs.iter::< f64 >() {
+	for v in world.iter::< f64 >() {
 		println!( "    {v:#?}" );
 	}
 }
 
 fn removal () {
-	let mut ecs = MinEcs::new();
+	let mut world = MinEcs::new();
 	
-	let entity_0 = ecs.new_entity();
-	ecs.insert( entity_0, 67.0 );
+	let entity_0 = world.new_entity::< TestEntity >();
+	world.insert( entity_0, 67.0 );
 	
-	let entity_1 = ecs.new_entity();
-	ecs.insert( entity_1, 422 );
+	let entity_1 = world.new_entity::< TestEntity >();
+	world.insert( entity_1, 422 );
 	
-	let entity_2 = ecs.new_entity();
-	ecs.insert( entity_2, 2 );
-	ecs.insert( entity_2, 10.0 );
-	ecs.insert_bonus_fld( entity_2, 1024 );
+	let entity_2 = world.new_entity();
+	world.insert( entity_2, 2 );
+	world.insert( entity_2, 10.0 );
+	world.insert_fn( TestEntity::set_bonus_fld, entity_2, 1024 );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// before removal:\nentity_0 = {:#?}", ecs.entity( entity_0 ).unwrap() );
+	println!( "// before removal:\nentity_0 = {:#?}", world.entity( entity_0 ).unwrap() );
 	
-	let comp_id = ecs.entity( entity_0 ).unwrap().get().unwrap();
+	let comp_id = world.entity( entity_0 ).unwrap().get().unwrap();
 	let mut opt: Option< &f64 >;
-	opt = ecs.get( comp_id );
+	opt = world.get( comp_id );
 	println!( "ecs.get( comp_id ) = {:#?}", opt );
 	
-	_ = ecs.remove::<f64>( entity_0 );
+	_ = world.remove::<f64>( entity_0 );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// after removal:\nentity_0 = {:#?}", ecs.entity( entity_0 ).unwrap() );
+	println!( "// after removal:\nentity_0 = {:#?}", world.entity( entity_0 ).unwrap() );
 	
-	opt = ecs.get( comp_id );
-	println!( "ecs.get( comp_id ) = {:#?}", opt );
-	
-	println!( "//------------------------------------------------------------------------------" );
-	println!( "// before insert:\nentity_1 = {:#?}", ecs.entity( entity_1 ).unwrap() );
-	ecs.insert( entity_1, 418.0 );
-	
-	println!( "//------------------------------------------------------------------------------" );
-	println!( "// after insert:\nentity_1 = {:#?}", ecs.entity( entity_1 ).unwrap() );
-	
-	opt = ecs.get( comp_id );
+	opt = world.get( comp_id );
 	println!( "ecs.get( comp_id ) = {:#?}", opt );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// before removing `bonus_fld` from:\nentity_2 = {:#?}", ecs.entity( entity_2 ).unwrap() );
-	
-	let res = ecs.remove_bonus_fld( entity_2 );
-	println!( "\necs.remove_bonus_fld( entity_2 ) = {:#?}", res );
+	println!( "// before insert:\nentity_1 = {:#?}", world.entity( entity_1 ).unwrap() );
+	world.insert( entity_1, 418.0 );
 	
 	println!( "//------------------------------------------------------------------------------" );
-	println!( "// after removing `bonus_fld` from:\nentity_2 = {:#?}", ecs.entity( entity_2 ).unwrap() );
+	println!( "// after insert:\nentity_1 = {:#?}", world.entity( entity_1 ).unwrap() );
+	
+	opt = world.get( comp_id );
+	println!( "ecs.get( comp_id ) = {:#?}", opt );
+	
+	println!( "//------------------------------------------------------------------------------" );
+	println!( "// before removing `bonus_fld` from:\nentity_2 = {:#?}", world.entity( entity_2 ).unwrap() );
+	
+	let res = world.remove_fn( TestEntity::remove_bonus_fld, entity_2 );
+	println!( "\necs.remove_fn( TestEntity::remove_bonus_fld, entity_2 ) = {:#?}", res );
+	
+	println!( "//------------------------------------------------------------------------------" );
+	println!( "// after removing `bonus_fld` from:\nentity_2 = {:#?}", world.entity( entity_2 ).unwrap() );
+	
+	
+	world.insert_fn( TestEntity::set_bonus_fld, entity_0, 4096 );
+	println!( "//------------------------------------------------------------------------------" );
+	println!( "// after inserting `bonus_fld` to:\nentity_0 = {:#?}", world.entity( entity_0 ).unwrap() );
+	let opt = world.get( world.entity( entity_0 ).unwrap().bonus_fld().unwrap() );
+	println!( "ecs.get( comp_id ) = {:#?}", opt );
 }
 
 fn run_system () {
-	let mut ecs = CharacterEcs::new();
+	let mut world = MinEcs::new();
 	
-	let entity_0 = ecs.new_entity();
-	ecs.insert_health( entity_0, Points( 100 ) );
-	ecs.insert_armor( entity_0, Points( 50 ) );
-	ecs.insert_incoming_damage( entity_0, vec![ Points( 25 ), Points( 10 ), Points( 20 ) ] );
+	let entity_0 = world.new_entity();
+	world.insert_fn( Character::set_health, entity_0, Points( 100 ) );
+	world.insert_fn( Character::set_armor, entity_0, Points( 50 ) );
+	world.insert_fn( Character::set_incoming_damage, entity_0, vec![ Points( 25 ), Points( 10 ), Points( 20 ) ] );
 	
-	let entity_1 = ecs.new_entity();
-	ecs.insert_health( entity_1, Points( 100 ) );
-	ecs.insert_incoming_damage( entity_1, vec![ Points( 25 ), Points( 10 ), Points( 20 ) ] );
+	let entity_1 = world.new_entity();
+	world.insert_fn( Character::set_health, entity_1, Points( 100 ) );
+	world.insert_fn( Character::set_incoming_damage, entity_1, vec![ Points( 25 ), Points( 10 ), Points( 20 ) ] );
 	
-	ecs.run_system( |ca, entity| {
+	world.run_system( |ca, entity: &Character| {
 		println!( "//------------------------------------------------------------------------------" );
 		let mut new_hp;
 		let mut new_armor;
@@ -202,3 +219,5 @@ fn run_system () {
 		ca.get_mut( entity.incoming_damage().unwrap() ).unwrap().inner_mut().clear();
 	});
 }
+
+

@@ -6,10 +6,6 @@ authors = [ "Catimor" ]
 license = "MIT OR Apache-2.0"
 rust-version = "1.77"
 
-[[bin]]
-name = "bin"
-path = "src/bin.rs"
-
 [dependencies]
 serde = { version = "1.0", features = [ "derive" ], optional = true }
 minecs_common = { path = "./minecs_common" }
@@ -19,7 +15,7 @@ minecs_macro = { path = "./minecs_macro" }
 
 [features]
 default = []
-serde = [ "dep:serde" ]
+serde = [ "dep:serde", "minecs_common/serde" ]
 
 # --Profiles
 

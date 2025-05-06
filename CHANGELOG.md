@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.2.0-rc.2 - 2025.05.06
+
+### Changed
+- removed unused bin section from cargo.toml
+- fixed `minecs_common` incorrectly depending on serde by default, even when `min_ecs` was not.
+- a few improvements and bug fixes in README and documentation.
+
+## 0.2.0-rc.1 - 2025.04.17
+
 ### Removed
 - world (previously referred to as ecs) no longer has methods for manipulating each named component of an entity. Use new world methods: `insert_fn` and `remove_fn` instead.
 - sub-crate `minecs_common` dependency on `paste`.

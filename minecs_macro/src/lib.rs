@@ -190,21 +190,21 @@ use prod::*;
 /// 
 /// # Usage
 /// 
-/// 1. optional derive attribute, ( on top of: `Debug`, `Clone`, `PartialEq` ) fe. `#[derive( serde::Serialize, serde::Deserialize )]`
-/// 2. world declaration, fe. `world MinEcs;`
+/// 1. optional derive attribute, ( on top of: `Debug`, `Clone`, `PartialEq` )
+/// 		for example: `#[derive( serde::Serialize, serde::Deserialize )]`
+/// 2. world declaration, such as `world MinEcs;`
 /// 	1. keyword `world`
-/// 	2. identifier - name of the world,
+/// 	2. identifier - name of the world
 /// 	3. semicolon
-/// 3. comp_vec declaration, fe. `comp_vec Components;`
-/// 	1. keyword `comp_vec`
-/// 	2. identifier - name of the comp_vec,
-/// 	3. semicolon
-/// 4. at least one entity declaration, fe. `entity TestEntity ( f64, usize ) { name_vec: Vec< Rc< str >> }`
+/// 3. at least one entity declaration, such as `entity TestEntity (...);`
 /// 	1. keyword `entity`
-/// 	2. identifier - name of the entity,
+/// 	2. identifier - name of the entity
 /// 	3. either or both:
-/// 		- parentheses `()` surrounding comma separated list of not-repeating types, followed either by braces or semicolon; fe. `( f64, usize );`,
-/// 		- curly braces `{}` surrounding comma separated field declarations in form: identifier, colon, type; fe. `{ name_vec: Vec< Rc< str >> }`.
+/// 		- anonymous types declaration, where parentheses `()` surround
+/// 			comma separated list of not-repeating types, such as `( f64, usize );`
+/// 			must be followed either by curly braces or semicolon `;`
+/// 		- named types declaration, where curly braces `{}` surround
+/// 			comma separated field declarations such as: `name_list: Vec< Rc< str >>`.
 /// 
 /// ```rust
 /// # use minecs_common::*;
@@ -214,9 +214,7 @@ use prod::*;
 /// minecs!(
 /// 	#[derive( /* serde::Serialize, serde::Deserialize, ... */ )]
 /// 	world MinEcs;
-/// 	comp_vec CompArray;
-/// 	entity TestEntity ( f64, usize )
-/// 	{
+/// 	entity TestEntity ( f64, usize ) {
 /// 		some_flag: bool,
 /// 		name_vec: Vec< Rc< str >>,
 /// 	}

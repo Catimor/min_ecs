@@ -195,23 +195,27 @@
 //! 	world MinEcs;
 //! 	entity TestEntity ( f64, usize, /* --ect-- */ )
 //! 	{
-//! 		some_fld: usize, // trailing comma is optional
+//! 		named_fld: usize, // trailing comma is optional
 //! 	}
 //! );
 //! 
 //! /*
 //! `minecs!` usage:
-//! 1. optional derive attribute, ( on top of: `Debug`, `Clone`, `PartialEq` ) fe. `#[derive( serde::Serialize, serde::Deserialize )]`
-//! 2. world declaration, fe. `world MinEcs;`
+//! 1. optional derive attribute, ( on top of: `Debug`, `Clone`, `PartialEq` )
+//! 		for example: `#[derive( serde::Serialize, serde::Deserialize )]`
+//! 2. world declaration, such as `world MinEcs;`
 //! 	1. keyword `world`
-//! 	2. identifier - name of the world,
+//! 	2. identifier - name of the world
 //! 	3. semicolon
-//! 3. at least one entity declaration, fe. `entity TestEntity`
+//! 3. at least one entity declaration, such as `entity TestEntity (...);`
 //! 	1. keyword `entity`
-//! 	2. identifier - name of the entity,
+//! 	2. identifier - name of the entity
 //! 	3. either or both:
-//! 		- parentheses `()` surrounding comma separated list of not-repeating types, followed either by braces or semicolon; fe. `( f64, usize );`,
-//! 		- curly braces `{}` surrounding comma separated field declarations in form: identifier, colon, type; fe. `names: Vec< Rc< str >>`.
+//! 		- anonymous types declaration, where parentheses `()` surround
+//! 			comma separated list of not-repeating types, such as `( f64, usize );`
+//! 			must be followed either by curly braces or semicolon `;`
+//! 		- named types declaration, where curly braces `{}` surround
+//! 			comma separated field declarations such as: `name_list: Vec< Rc< str >>`.
 //! */
 //! 
 //! // create mutable instance
@@ -224,8 +228,11 @@
 //! world.insert( entity_id_0, 67.0 );
 //! 
 //! // World doesn't have dedicated insert methods for individual named fields.
-//! // Instead, an `insert_fn` method must be used, where dedicated insert method of `E: Entity` is provided, followed by entity_id and component.
-//! world.insert_fn( TestEntity::set_some_fld, entity_id_0, 422 );
+//! // Instead, an `insert_fn` method must be used, where the following must be provided:
+//! // 	- a method of the `Entity` ("set_" followed by field name)
+//! // 	- `EntityId`
+//! // 	- component
+//! world.insert_fn( TestEntity::set_named_fld, entity_id_0, 422 );
 //! 
 //! // iteration over a single component
 //! for comp in world.iter::< f64 >() {
@@ -244,7 +251,8 @@
 //! //`let comp_id: CompId< f64, TestEntity > = entity.get().unwrap();`
 //! 
 //! // running systems for each entity; may be re-worked in the future.
-//! // currently requires function / closure which directly manipulates `&mut V: CompVec` and `&E: Entity`. Ecs runs such fn / closure for each entity.
+//! // currently requires function / closure which directly manipulates `&mut V: CompVec` and `&E: Entity`.
+//! // Ecs runs such fn / closure for each entity.
 //!	world.run_system( |comp_vec, entity| {
 //! 	println!( "//------------------------------------------------------------------------------" );
 //!		println!( "entity: {:#?}", entity );
@@ -257,7 +265,7 @@
 //! 		let opt: Option< &f64 > = comp_vec.get( id ).map( Component::inner );
 //! 		println!( "comp_vec.get( id ).map( Component::inner ) = {:#?}", opt );
 //! 	}
-//! 	if let Some( id ) = entity.some_fld() {
+//! 	if let Some( id ) = entity.named_fld() {
 //! 		let val = comp_vec.get( id ).unwrap().inner();
 //! 		println!( "comp_vec.get( id ).unwrap().inner() = {val}" );
 //! 	}

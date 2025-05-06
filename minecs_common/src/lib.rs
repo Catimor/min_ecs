@@ -176,5 +176,7 @@
 // temporary
 #![allow( clippy::result_unit_err )]
 
+//! Types and traits that are re-exported by `min_ecs` and used in `minecs_macro`.
+
 mod prod;
 pub use prod::*;
